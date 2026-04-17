@@ -1,102 +1,120 @@
 import streamlit as st
-import sqlite3
 import pandas as pd
+import sqlite3
 import os
-from dotenv import load_dotenv
 from google import genai
 from google.genai import types
+from dotenv import load_dotenv
 
+# Load environment variables for local testing
 load_dotenv()
-API_KEY = os.getenv("GEMINI_API_KEY")
-DB_PATH = "event_memory.db"
-client = genai.Client(api_key=API_KEY)
 
+# --- INITIAL SETUP ---
+# Branding your app for the SPIT Fine Arts department [cite: 52]
+st.set_page_config(page_title="PivotAI | SPIT Orchestrator", layout="wide")
+st.title("🎨 PivotAI: Fine Arts Orchestrator")
+st.markdown("### Google Solution Challenge 2026 | SDG 12: Responsible Consumption")
+
+# Initialize Gemini 3 Flash Client using the 2026 stable identifier [cite: 101]
+api_key = os.getenv("GEMINI_API_KEY")
+client = genai.Client(api_key=api_key)
+MODEL_ID = "gemini-3-flash-preview" 
+
+# --- DATABASE ENGINE (SQLITE WAL MODE) ---
 def get_connection():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL;")
+    # check_same_thread=False is required for Streamlit's multi-threaded nature
+    conn = sqlite3.connect("event_memory.db", check_same_thread=False)
+    # WAL mode enables high-concurrency campus environments (multi-user writes) 
+    conn.execute("PRAGMA journal_mode=WAL;") 
     return conn
 
-def init_db(force_reset=False):
+def init_db():
     conn = get_connection()
-    if force_reset:
-        conn.execute("DROP TABLE IF EXISTS inventory")
-        conn.execute("DROP TABLE IF EXISTS tasks")
-        conn.execute("DROP TABLE IF EXISTS team")
-
-    conn.execute("CREATE TABLE IF NOT EXISTS inventory (item_name TEXT, qty INTEGER, status TEXT)")
-    conn.execute("CREATE TABLE IF NOT EXISTS tasks (id INTEGER PRIMARY KEY, task_name TEXT, lead_name TEXT)")
-    conn.execute("CREATE TABLE IF NOT EXISTS team (name TEXT, role TEXT)")
-
-
-    check = conn.execute("SELECT count(*) FROM team").fetchone()[0]
-    if check == 0:
-        conn.execute("INSERT INTO team VALUES ('Vrinda', 'Lead'), ('Neeva', 'Support')")
-        conn.execute("INSERT INTO inventory VALUES ('Gold Paint', 5, 'In-Stock'), ('Canvas', 10, 'In-Stock')")
-        conn.execute("INSERT INTO tasks VALUES (1, 'Backdrop Decor', 'Vrinda')")
-
+    # Task table to track responsibilities [cite: 83]
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS tasks (
+            id INTEGER PRIMARY KEY,
+            task_name TEXT,
+            assigned_to TEXT,
+            status TEXT
+        )
+    """)
+    # Inventory table for SDG 12 material tracking [cite: 62, 79]
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS inventory (
+            id INTEGER PRIMARY KEY,
+            item_name TEXT,
+            quantity INTEGER,
+            procured TEXT
+        )
+    """)
+    # Seed initial data for your SPIT Fine Arts team
+    if conn.execute("SELECT COUNT(*) FROM tasks").fetchone() == 0:
+        conn.execute("INSERT INTO tasks (task_name, assigned_to, status) VALUES ('Stage Backdrop', 'Neeva Mehta', 'In Progress')")
+        conn.execute("INSERT INTO tasks (task_name, assigned_to, status) VALUES ('Entrance Arch', 'Vrinda Damani', 'Pending')")
+        conn.execute("INSERT INTO inventory (item_name, quantity, procured) VALUES ('Acrylic Red', 10, 'Yes')")
+        conn.execute("INSERT INTO inventory (item_name, quantity, procured) VALUES ('MDF Boards', 5, 'No')")
     conn.commit()
     conn.close()
 
-init_db(force_reset=False)
+init_db()
 
-st.set_page_config(page_title="PivotAI Final", layout="wide", page_icon="🎨")
-st.title(" PivotAI: Fine Arts Command Center")
-st.caption(" Prototype Ready | SPIT Fine Arts")
-
-col1, col2 = st.columns(2)
+# --- UI LAYERS ---
+col1, col2 = st.columns()
 
 with col1:
-    st.subheader(" Inventory")
+    st.subheader("📋 Active Task Board")
     conn = get_connection()
-   
-    df_inv = pd.read_sql_query(
-        "SELECT item_name AS 'Item', qty AS 'Qty', status AS 'Status' FROM inventory", conn
-    )
-    st.table(df_inv)
+    # Pandas handles data preparation for the dashboard 
+    tasks_df = pd.read_sql_query("SELECT * FROM tasks", conn)
+    st.dataframe(tasks_df, use_container_width=True)
+    
+    st.subheader("📦 Inventory Tracking (SDG 12)")
+    inventory_df = pd.read_sql_query("SELECT * FROM inventory", conn)
+    st.dataframe(inventory_df, use_container_width=True)
     conn.close()
 
 with col2:
-    st.subheader(" Active Tasks")
-    conn = get_connection()
-    df_tasks = pd.read_sql_query(
-        "SELECT id AS 'ID', task_name AS 'Task', lead_name AS 'Lead' FROM tasks", conn
-    )
-    st.table(df_tasks)
-    conn.close()
+    st.subheader("🤖 AI Logistics Brain")
+    st.info("Report a disruption in plain English (e.g., 'Paint is delayed') [cite: 73]")
+    
+    report = st.text_area("Disruption Report", placeholder="Describe the logistics lag...")
+    
+    if st.button("Execute Pivot Plan"):
+        if report:
+            with st.spinner("Gemini 3 Flash is recalculating logistics... [cite: 56]"):
+                # Converting DataFrames to strings for AI context
+                tasks_ctx = tasks_df.to_string()
+                inv_ctx = inventory_df.to_string()
+                
+                # The Core "Pivot" Reasoning Call [cite: 69, 93]
+                response = client.models.generate_content(
+                    model=MODEL_ID,
+                    contents=f"CONTEXT:\nTasks:\n{tasks_ctx}\n\nInventory:\n{inv_ctx}\n\nPROBLEM: {report}",
+                    config=types.GenerateContentConfig(
+                        system_instruction=(
+                            "You are the PivotAI Orchestrator for SPIT Fine Arts. "
+                            "Analyze the event state and the reported problem. "
+                            "Suggest a specific 'Pivot Plan' to ensure project continuity. "
+                            "If a task needs reassigning, use available names or suggest a delay. "
+                            "Prioritize material conservation (SDG 12)."
+                        ),
+                        # Enabling thinking allows Gemini to reason through the planning 
+                        thinking_config=types.ThinkingConfig(include_thoughts=True)
+                    )
+                )
+                
+                st.success("Pivot Plan Generated")
+                st.write(response.text)
+                
+                # Expandable section to show the 'Thought' process to judges
+                with st.expander("View AI Logistics Reasoning (Thinking Trace)"):
+                    for part in response.candidates.content.parts:
+                        if part.thought:
+                            st.markdown(f"*{part.text}*")
+        else:
+            st.warning("Please describe a problem to pivot.")
 
-# --- 3. THE AI BRAIN (ORCHESTRATOR) ---
+# --- FOOTER ---
 st.divider()
-st.subheader(" Report a Problem")
-report = st.text_input("Describe the issue (e.g., Paint is delayed, reassign Task 1 to Neeva)")
-
-if st.button("Execute Pivot Plan"):
-    if report:
-        with st.spinner("Gemini is solving the problem..."):
-            conn = get_connection()
-            tasks_ctx = pd.read_sql_query("SELECT * FROM tasks", conn).to_dict()
-            inv_ctx = pd.read_sql_query("SELECT * FROM inventory", conn).to_dict()
-            conn.close()
-
-            response = client.models.generate_content(
-    model="gemini-1.5-flash", # Use the stable, high-performance model
-    contents=f"CONTEXT:\nTasks: {tasks_ctx}\nInventory: {inv_ctx}\n\nPROBLEM: {report}",
-    config=types.GenerateContentConfig(
-        system_instruction="You are a logistics expert. Suggest a fix. If a task needs reassigning, mention the name.",
-        thinking_config=types.ThinkingConfig(include_thoughts=True)
-    )
-)
-
-            thoughts = ""
-            answer = ""
-            for part in response.candidates[0].content.parts:
-                if hasattr(part, "thought") and part.thought:
-                    thoughts += part.text
-                else:
-                    answer += part.text
-
-            st.success("Plan Generated")
-            st.write(answer)
-
-            with st.expander("View AI Reasoning"):
-                st.write(thoughts if thoughts else "No reasoning trace available.")
+st.caption("Developed by Team Pixel Paradox | Sardar Patel Institute of Technology")
