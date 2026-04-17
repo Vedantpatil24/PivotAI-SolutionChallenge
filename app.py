@@ -79,14 +79,13 @@ if st.button("Execute Pivot Plan"):
             conn.close()
 
             response = client.models.generate_content(
-              
-                model="gemini-2.5-flash-preview-05-14",
-                contents=f"CONTEXT:\nTasks: {tasks_ctx}\nInventory: {inv_ctx}\n\nPROBLEM: {report}",
-                config=types.GenerateContentConfig(
-                    system_instruction="You are a logistics expert. Suggest a fix. If a task needs reassigning, mention the name.",
-                    thinking_config=types.ThinkingConfig(include_thoughts=True)
-                )
-            )
+    model="gemini-1.5-flash", # Use the stable, high-performance model
+    contents=f"CONTEXT:\nTasks: {tasks_ctx}\nInventory: {inv_ctx}\n\nPROBLEM: {report}",
+    config=types.GenerateContentConfig(
+        system_instruction="You are a logistics expert. Suggest a fix. If a task needs reassigning, mention the name.",
+        thinking_config=types.ThinkingConfig(include_thoughts=True)
+    )
+)
 
             thoughts = ""
             answer = ""
