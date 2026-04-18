@@ -1,19 +1,22 @@
-#  PivotAI: Fine Arts Orchestrator
-**Google Solution Challenge 2026 | SDG 12: Responsible Consumption & Production**
+# 🌐 ResiliPath AI: Resilient Logistics Engine
+### *Google Solution Challenge 2026 | Smart Supply Chains (SDG 12.3)*
 
-###  The Problem
-In campus events at Sardar Patel Institute of Technology (SPIT), logistical delays—like paint shortages or member unavailability—often lead to wasted resources and project stalls.
+**ResiliPath AI** is a dynamic optimization engine designed to preemptively detect, flag, and mitigate global supply chain disruptions. By leveraging **Gemini 3 Flash**, the system analyzes multifaceted transit data to execute real-time route adjustments, minimizing resource waste and ensuring the integrity of critical logistics corridors.
 
-###  The Solution
-PivotAI is a logistics orchestrator built to ensure project continuity. Using **Google Gemini 3 Flash**, it reasons through real-time database updates to "pivot" assignments and resources, ensuring zero waste of student effort and materials.
+---
 
-###  Tech Stack
-- **AI Brain:** Google Gemini 3 Flash (Function Calling & Reasoning)
-- **Frontend:** Streamlit
-- **Data Engine:** SQLite (WAL Mode) & Pandas
-- **Deployment:** Google Cloud Run (Antigravity)
+### 🚀 Key Features
+* **Dynamic Optimization Plan (DOP):** Generates actionable pivot strategies for complex disruptions (e.g., port strikes, weather events, fuel shortages).
+* **Resilience Reasoning:** Utilizes Chain-of-Thought AI to explain the logic behind re-routing decisions.
+* **SDG 12.3 Focused:** Prioritizes the reduction of food and material loss in the supply chain.
+* **Cloud-Native Architecture:** Fully deployed on Google Cloud Run for global scalability.
 
-###  Key Features
-- **Intelligent Reassignment:** AI automatically updates the SQL database when problems are reported.
-- **Resource Oversight:** Real-time inventory tracking to prevent over-ordering.
-- **Self-Healing Architecture:** Robust data handling optimized for synchronized environments.
+### 🛠️ Tech Stack
+* **Core Logic:** Python 3.12
+* **AI Engine:** Google Gemini 3 Flash (via `google-genai` SDK)
+* **Web Framework:** Streamlit
+* **Database:** SQLite (WAL Mode)
+* **Infrastructure:** Google Cloud Run
+
+### 👥 Contributors
+* **Vedant Patil** - Sardar Patel Institute of Technology (SPIT), Mumbai.
